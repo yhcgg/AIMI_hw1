@@ -35,14 +35,40 @@ def measurement(outputs, labels, smooth=1e-10):
 
 def plot_accuracy(train_acc_list, val_acc_list):
     # TODO plot training and testing accuracy curve
+    plt.figure(figsize=(8, 4))
+
+    # train
+    plt.subplot(1, 2, 1)
+    plt.plot(train_acc_list)
+    plt.title("Train_Accuracy")
+
+    # test
+    plt.subplot(1, 2, 2)
+    plt.plot(val_acc_list)
+    plt.title("Test_Accuracy")
+
+    plt.show()
     pass
 
 def plot_f1_score(f1_score_list):
     # TODO plot testing f1 score curve
+    plt.figure(figsize=(5, 3))
+
+    plt.plot(f1_score_list)
+    plt.title("Test_F1_score")
+
+    plt.show()
     pass
 
 def plot_confusion_matrix(confusion_matrix):
     # TODO plot confusion matrix
+    plt.figure(figsize=(6, 4))
+
+    sns.heatmap(confusion_matrix, annot=True, fmt=".0f",
+                xticklabels=['Predicted Normal', 'Predicted Pneumonia'],
+                yticklabels=['Actual Normal', 'Actual Pneumonia'])
+
+    plt.show()
     pass
 
 def train(device, train_loader, model, criterion, optimizer):
@@ -58,7 +84,7 @@ def train(device, train_loader, model, criterion, optimizer):
         with torch.set_grad_enabled(True):		# 開啟梯度計算
             avg_loss = 0.0
             train_acc = 0.0
-            tp, tn, fp, fn = 0, 0, 0, 0     
+            tp, tn, fp, fn = 0, 0, 0, 0
             for _, data in enumerate(tqdm(train_loader)):		# 顯示進度條
                 inputs, labels = data
                 inputs = inputs.to(device)
@@ -76,7 +102,7 @@ def train(device, train_loader, model, criterion, optimizer):
                 tp += sub_tp
                 tn += sub_tn
                 fp += sub_fp
-                fn += sub_fn          
+                fn += sub_fn
 
             avg_loss /= len(train_loader.dataset)
             train_acc = (tp+tn) / (tp+tn+fp+fn) * 100
@@ -102,7 +128,7 @@ def test(test_loader, model):
     with torch.set_grad_enabled(False):
         model.eval()
         for images, labels in test_loader:
-            
+
             images = images.to(device)
             labels = labels.to(device)
             outputs = model(images)
@@ -116,7 +142,7 @@ def test(test_loader, model):
 
         c_matrix = [[int(tp), int(fn)],
                     [int(fp), int(tn)]]
-        
+
         val_acc = (tp+tn) / (tp+tn+fp+fn) * 100
         recall = tp / (tp+fn)
         precision = tp / (tp+fp)
@@ -136,8 +162,8 @@ if __name__ == '__main__':
     parser.add_argument('--num_classes', type=int, required=False, default=2)
 
     # for training
-    parser.add_argument('--num_epochs', type=int, required=False, default=30)
-    parser.add_argument('--batch_size', type=int, required=False, default=128)
+    parser.add_argument('--num_epochs', type=int, required=False, default=2)
+    parser.add_argument('--batch_size', type=int, required=False, default=32)
     parser.add_argument('--lr', type=float, default=1e-5)
     parser.add_argument('--wd', type=float, default=0.9)
 
