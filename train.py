@@ -14,9 +14,11 @@ from torchvision import transforms
 import torchvision.models as models
 from torchvision.datasets import ImageFolder
 
+import shutil
 import seaborn as sns
 from matplotlib.ticker import MaxNLocator
 
+from dataAugumentation import generateDataset
 
 def measurement(outputs, labels, smooth=1e-10):
     tp, tn, fp, fn = smooth, smooth, smooth, smooth
@@ -158,6 +160,30 @@ def test(test_loader, model):
 
     return val_acc, f1_score, c_matrix, recall, precision
 
+def getTrainImageFolder(dataset_root, doAug, datasetPath, resize):
+    if doAug:
+        trans = transforms.Compose([transforms.Resize((resize, resize)),
+                                    transforms.ToTensor()])
+    else:
+        trans = transforms.Compose([transforms.Resize((resize, resize)),
+                                    transforms.RandomRotation(args.degree, resample=False),
+                                    transforms.ToTensor()])
+
+    train_dataset = ImageFolder(root=os.path.join(dataset_root, 'train'),
+                                transform=trans)
+    if doAug:
+        # generate augmentation dataset
+        generateDataset(datasetPath)
+        aug_dataset = ImageFolder(root=os.path.join(dataset_root, 'augmentation'),
+                                  transform=transforms.Compose([transforms.Resize((args.resize, args.resize)),
+                                                                transforms.ToTensor()]))
+        train_dataset.classes.extend(aug_dataset.classes)
+        train_dataset.classes = sorted(list(set(train_dataset.classes)))
+        train_dataset.class_to_idx.update(aug_dataset.class_to_idx)
+        train_dataset.samples.extend(aug_dataset.samples)
+        train_dataset.targets.extend(aug_dataset.targets)
+    return train_dataset
+
 if __name__ == '__main__':
     warnings.filterwarnings('ignore', category=DeprecationWarning)
     warnings.filterwarnings('ignore', category=UserWarning)
@@ -178,6 +204,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str, required=False, default='chest_xray')
 
     # for data augmentation
+    parser.add_argument('--augmentation', type=bool, default=False)
     parser.add_argument('--degree', type=int, default=90)
     parser.add_argument('--resize', type=int, default=224)
 
@@ -188,13 +215,10 @@ if __name__ == '__main__':
     print(f'## Now using {device} as calculating device ##')
 
     # set dataloader
-    train_dataset = ImageFolder(root=os.path.join(args.dataset, 'train'),
-                                transform=transforms.Compose([transforms.Resize((args.resize, args.resize)),
-                                                                transforms.RandomRotation(args.degree, resample=False),
-                                                                transforms.ToTensor()]))
+    train_dataset = getTrainImageFolder(args.dataset, args.augmentation, args.dataset, args.resize)
     test_dataset = ImageFolder(root=os.path.join(args.dataset, 'test'),
                                transform=transforms.Compose([transforms.Resize((args.resize, args.resize)),
-                                                               transforms.ToTensor()]))
+                                                             transforms.ToTensor()]))
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
@@ -239,3 +263,7 @@ if __name__ == '__main__':
     print(f'↳ Training Acc.(%): {best_epoch_info["train_acc"]:.2f}%')
     print(f'↳ Recall: {best_epoch_info["recall"]:.4f}, Precision: {best_epoch_info["precision"]:.4f}, F1-score: {best_epoch_info["f1_score"]:.4f}')
     print(f'↳ Test Acc.(%): {best_epoch_info["test_acc"]:.2f}%')
+
+    # del augmentation dataset
+    augFile = args.dataset + '/augmentation'
+    shutil.rmtree(augFile)
