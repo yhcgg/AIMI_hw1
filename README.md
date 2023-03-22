@@ -7,12 +7,12 @@
     - resnet18
     - resnet50
     - vgg16
-  - --num_epochs: amount of epoch (default: 30)
+  - --num_epochs: number of epoch (default: 30)
   - --batch_size: size of batch (default: 128)
   - --lr: learning rate (default: 1e-5)
   - --wd: weight decay (default: 0.9)
   - --dataset: path of dataset (default: chest_xray)
   - --augmentation: do data augmentation or not (default: False)
-  - --degree: rotation degree (default: 90)   *#only useful when --augmentation = False*
+  - --degree: rotation degree (default: 90)   *#only useful if --augmentation = False*
   - --resize: image resize (default: 224)
 - Run `python train.py`
