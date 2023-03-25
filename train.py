@@ -160,22 +160,22 @@ def test(test_loader, model):
 
     return val_acc, f1_score, c_matrix, recall, precision
 
-def getTrainImageFolder(dataset_root, doAug, datasetPath, resize):
+def getTrainImageFolder(dataset_root, doAug, resize, degree):
     if doAug:
         trans = transforms.Compose([transforms.Resize((resize, resize)),
                                     transforms.ToTensor()])
     else:
         trans = transforms.Compose([transforms.Resize((resize, resize)),
-                                    transforms.RandomRotation(args.degree, resample=False),
+                                    transforms.RandomRotation(degree, resample=False),
                                     transforms.ToTensor()])
 
     train_dataset = ImageFolder(root=os.path.join(dataset_root, 'train'),
                                 transform=trans)
     if doAug:
         # generate augmentation dataset
-        generateDataset(datasetPath)
+        generateDataset(dataset_root)
         aug_dataset = ImageFolder(root=os.path.join(dataset_root, 'augmentation'),
-                                  transform=transforms.Compose([transforms.Resize((args.resize, args.resize)),
+                                  transform=transforms.Compose([transforms.Resize((resize, resize)),
                                                                 transforms.ToTensor()]))
         train_dataset.classes.extend(aug_dataset.classes)
         train_dataset.classes = sorted(list(set(train_dataset.classes)))
@@ -215,7 +215,7 @@ if __name__ == '__main__':
     print(f'## Now using {device} as calculating device ##')
 
     # set dataloader
-    train_dataset = getTrainImageFolder(args.dataset, args.augmentation, args.dataset, args.resize)
+    train_dataset = getTrainImageFolder(args.dataset, args.augmentation, args.resize, args.degree)
     test_dataset = ImageFolder(root=os.path.join(args.dataset, 'test'),
                                transform=transforms.Compose([transforms.Resize((args.resize, args.resize)),
                                                              transforms.ToTensor()]))
@@ -265,5 +265,6 @@ if __name__ == '__main__':
     print(f'↳ Test Acc.(%): {best_epoch_info["test_acc"]:.2f}%')
 
     # del augmentation dataset
-    augFile = args.dataset + '/augmentation'
-    shutil.rmtree(augFile)
+    if args.augmentation:
+        augFile = args.dataset + '/augmentation'
+        shutil.rmtree(augFile)
